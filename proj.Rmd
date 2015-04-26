@@ -1,0 +1,64 @@
+#-------------------------------------------------------------------------------
+### Author : Arun Kumar Madas, 
+### Date   : 04/25/2015
+### Course : Regression Analysis - Project
+#-------------------------------------------------------------------------------
+# Executive Summary
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+        1. "Is an automatic or manual transmission better for MPG"
+        2. "Quantify the MPG difference between automatic and manual transmissions
+```{r}
+data(mtcars)
+# convert qualitative data to factors
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am, labels = c("Automatic", "Manual"))
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+```
+#### "Is an automatic or manual transmission better for MPG"
+```{r fig.align='left'}
+# plot pairwise graph of mt cars
+p1 = pairs(mtcars, panel = panel.smooth, main = "Pairwise plot of mtcars data")
+```
+#### Exploratory Analysis : 
+A boxplot was produced to show the difference between automatic and manual in terms of MPG. In figure 1, it is clear that manual transmission produces more MPG. Next, a pairwise graph (figure 2) was created in order to get a greater intuition of what other variables may be of interest. There is a linear relationship between MPG and each of cyl, disp, hp, drat, wt, qsec, vs, am. The covariance was also computed (figure 3) between every variable and the positive values were noted (qsec = 0.419, vs = 0.664, am = 0.600, gear = 0.480). Then a linear model was fit on all the variables to determine which variables should be used in the final models. In figure 4 the summary from this model is shown. The lowest p values were taken (i.e. wt = 0.063, am = 0.234, qsec = 0.274) due to their high significance in predicting MPG.
+```{r}
+# check the correlation of variances between every value
+cov2cor(cov(sapply(mtcars, as.numeric)))
+
+boxplot(mpg ~ am, data = mtcars,
+        xlab = "Transmission type", ylab = "Miles per gallon",
+        main = "MPG vs Transmission", col = c("green", "blue"), 
+        names = c("Automatic", "Manual"))
+
+# model using all data as predictors
+everything_model = lm(mpg ~ ., data = mtcars)
+summary(everything_model)
+```
+
+#### Model
+From the initial model, covariance test and visually inspecting the pairwise graph the following variables stood out in particular: qsec, vs, am, wt and gear. Next a stepwise model process was used in order to obtain the most significant predictors to be used. This is done by using the step function which creates multple regression models with different variables and produces list of the best predictors. As shown in figure 5, the most significant predictors in determining the MPG are cyl, hp, wt and am. The summary for this model is show in figure 6, in particular the forumla is given as: lm(formula = mpg ~ cyl + hp + wt + am, data = mtcars). This selection model yielded an R squared value of 84% (figure 6) meaning that very high percentage of variation is explained by the regression model. Next, the new model was compared with a basic model that only uses transmission type as its predictor. A p-value of 1.688e-08 was obtained (figure 7). This value is miniscule which means that the added predictors are significant to improving the model's accuracy.
+```{r}
+# step wise selection process
+new_model <- step(lm(mpg ~ ., data = mtcars), trace = 0)
+# compare basic model to selection model
+basic_model <- lm(mpg ~ am, data = mtcars)
+compare <- anova(basic_model, new_model)
+```
+Diagnostics : The residuals from the final model are plotted below.
+```{r}
+par(mfrow=c(2, 2))
+plot(new_model)
+```
+The Residuals vs Fitted plot shows no pattern between the residuals and fitted values indicating that this regression model is well fit.
+The QQ plot shows that the points line up as expected meaning that the distribtion is normal and our model predictions are accurate.
+In both the Scale-Location plot and the Residuals vs Leverage plots, the points are in a group with none too far from the center indicating no point had too much leverage.
+
+#### Statistical Inference
+A Two Sample t-test was conducted between the different transmission types. The null hypothesis that transmission types don't have an effect on the MPG is discarded for a p-value greater than 0.05. The results are shown in figure 8. The p-value of 0.001374 and difference in means show that manual transmission has significantly more MPG than automatic.
+```{r}
+t_test <- t.test(mpg ~ am, data = mtcars)
+```
+# Conclusions
+The transmission type of a car has a significant effect on its fuel efficiency. According to the model, manual transmission, on average, has 1.81 MPG more than automatics. According to the boxplot, manual transmission has ~ 6 MPG more than automatics.
